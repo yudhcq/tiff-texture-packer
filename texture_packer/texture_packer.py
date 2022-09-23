@@ -1,10 +1,9 @@
-from PIL import Image, ImageDraw
+from PIL import Image
 
 import rasterio
 import numpy as np
 
 import math
-from pprint import pprint
 
 # Based off of the great writeup, demo and code at:
 # http://codeincomplete.com/posts/2011/5/7/bin_packing/
@@ -198,6 +197,20 @@ def crop_by_extents(image, extent, tile=False, crop=False):
     return (image, changes)
 
 def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None, tile=False, crop=False):
+    def insert_at(big, pos, small):
+        #https://stackoverflow.com/questions/66896138/python-numpy-insert-2d-array-into-bigger-2d-array-on-given-posiiton
+        x1 = pos[0]
+        y1 = pos[1]
+        x2 = x1 + small.shape[1]
+        y2 = y1 + small.shape[2]
+        print(x1, '\t', x2, '\t', y1, '\t', y2)
+        assert x2  <= big.shape[1], "the position will make the small matrix exceed the boundaries at x"
+        assert y2  <= big.shape[2], "the position will make the small matrix exceed the boundaries at y"
+
+        big[x1:x2,y1:y2] = small
+
+        return big
+
     images = []
     blocks = []
     image_name_map = {}
@@ -256,9 +269,8 @@ def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None,
         }
 
         #output_array.paste(image, (block.x, block.y))
-        print(fname, image.shape[1], image.shape[2], block.x, block.y)
-        #https://www.geeksforgeeks.org/numpy-insert-python/ : See code 3
-        #output_array[block.y:image.shape[1], block.x:image.shape[2]] = image
+        print(output_array.shape, image.shape, (block.x, block.y))
+        output_array = insert_at(output_array, (block.x, block.y), image)
         print(fname, " Done!!!")
 
     #output_image = output_image.transpose(Image.FLIP_TOP_BOTTOM)

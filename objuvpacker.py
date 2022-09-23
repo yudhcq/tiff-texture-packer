@@ -3,7 +3,7 @@ import os
 import sys
 from pprint import pprint
 from distutils.util import strtobool
-from imagepacker import pack_images
+from texture_packer.texture_packer import pack_images
 
 def guess_realpath(path):
     """Checks for a file in a path, or in a local path"""
