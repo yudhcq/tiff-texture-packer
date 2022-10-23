@@ -1,9 +1,9 @@
 import argparse
 import os
-import sys
 from pprint import pprint
 from distutils.util import strtobool
 from texture_packer.texture_packer import pack_images
+import rasterio
 
 def guess_realpath(path):
     """Checks for a file in a path, or in a local path"""
@@ -289,18 +289,16 @@ def main():
         new_obj.write("\n".join(new_obj_lines))
     with open(output_name+".mtl", "w") as new_mtl:
         new_mtl.write("\n".join(new_mtl_lines))
-    output_image.save(outname, format="PNG")
+    #output_image.save(outname, format="PNG")
+    print(output_image.shape)
+    new_dataset = rasterio.open('test1.tif', 'w', driver='GTiff',
+                            height = output_image.shape[1], width = output_image.shape[2],
+                            count=output_image.shape[0], dtype=str(output_image.dtype))
+
+    new_dataset.write(output_image)
 
     print("\nRemember to convert the final packed texture into a JPEG if you do not need the transparency.")
 
-    # output_image.show()
 
 if __name__ == '__main__':
-    import traceback
-    # import os
-    # try:
     main()
-    # except Exception as ex:
-    #     print("Uh oh!")
-    #     traceback.print_exc()
-    #     os.system('pause')

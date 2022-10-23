@@ -139,12 +139,26 @@ class BlockPacker():
         else:
             return None
 
+def insert_at(big, pos, small):
+    #https://stackoverflow.com/questions/66896138/python-numpy-insert-2d-array-into-bigger-2d-array-on-given-posiiton
+    x1 = pos[0]
+    y1 = pos[1]
+    x2 = x1 + small.shape[1]
+    y2 = y1 + small.shape[2]
+    print(x1, '\t', x2, '\t', y1, '\t', y2, '\t', big.shape)
+    assert x2  <= big.shape[1], "the position will make the small matrix exceed the boundaries at x"
+    assert y2  <= big.shape[2], "the position will make the small matrix exceed the boundaries at y"
+
+    big[:,x1:x2,y1:y2] = small
+
+    return big
 
 def crop_by_extents(image, extent, tile=False, crop=False):
-    image = image.convert("RGBA")
+    #image = image.convert("RGBA")
     # overlay = Image.new('RGBA', image.size, (255,255,255,0))
 
-    w,h = image.size
+    #w,h = image.size
+    _, h, w = image.shape
     coords = [math.floor(extent.min_x*w), math.floor(extent.min_y*h),
               math.ceil(extent.max_x*w), math.ceil(extent.max_y*h)]
     # print("\nEXTENT")
@@ -158,13 +172,16 @@ def crop_by_extents(image, extent, tile=False, crop=False):
     if extent.to_tile:
         h_w, v_w = extent.tiling()
 
-        new_im = Image.new("RGBA", (max(w,math.ceil(h_w*w)), max(h,math.ceil(v_w*h))))
-        new_w, new_h = new_im.size
+        #new_im = Image.new("RGBA", (max(w,math.ceil(h_w*w)), max(h,math.ceil(v_w*h))))
+        new_im = np.empty(_, max(w,math.ceil(h_w*w)), max(h,math.ceil(v_w*h)))
+        #new_w, new_h = new_im.size
+        _, new_h, new_w = new_im.shape
 
         # Iterate through a grid, to place the image to tile it
         for i in range(0, new_w, w):
             for j in range(0, new_h, h):
                 new_im.paste(image, (i, j))
+                new_im = insert_at(new_im, (i, j), image)
 
         crop_coords = coords.copy()
 
@@ -175,8 +192,8 @@ def crop_by_extents(image, extent, tile=False, crop=False):
             crop_coords[3] = crop_coords[3] - crop_coords[1]
             crop_coords[1] = 0
 
-        # pprint(crop_coords)
-        image = new_im.crop(crop_coords)
+        print("Crop cords: ", crop_coords)
+        # TODO: image = new_im.crop(crop_coords)
     else:
         coords[0] = max(coords[0], 0)
         coords[1] = max(coords[1], 0)
@@ -184,7 +201,7 @@ def crop_by_extents(image, extent, tile=False, crop=False):
         coords[2] = min(coords[2], w)
         coords[3] = min(coords[3], h)
 
-        image = image.crop(coords)
+        # TODO: image = image.crop(coords)
 
     changed_w = coords[2] - coords[0]
     changed_h = coords[3] - coords[1]
@@ -197,20 +214,6 @@ def crop_by_extents(image, extent, tile=False, crop=False):
     return (image, changes)
 
 def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None, tile=False, crop=False):
-    def insert_at(big, pos, small):
-        #https://stackoverflow.com/questions/66896138/python-numpy-insert-2d-array-into-bigger-2d-array-on-given-posiiton
-        x1 = pos[0]
-        y1 = pos[1]
-        x2 = x1 + small.shape[1]
-        y2 = y1 + small.shape[2]
-        print(x1, '\t', x2, '\t', y1, '\t', y2)
-        assert x2  <= big.shape[1], "the position will make the small matrix exceed the boundaries at x"
-        assert y2  <= big.shape[2], "the position will make the small matrix exceed the boundaries at y"
-
-        big[x1:x2,y1:y2] = small
-
-        return big
-
     images = []
     blocks = []
     image_name_map = {}
@@ -247,7 +250,7 @@ def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None,
     packer = BlockPacker()
     packer.fit(blocks)
 
-    output_array = np.empty((_, packer.root.h, packer.root.w))
+    output_array = np.empty((_, packer.root.w, packer.root.h))
     print("Output Array Shape: ", output_array.shape)
     uv_changes = {}
     for block in blocks:
@@ -269,9 +272,8 @@ def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None,
         }
 
         #output_array.paste(image, (block.x, block.y))
-        print(output_array.shape, image.shape, (block.x, block.y))
+        #print(output_array.shape, image.shape, (block.x, block.y))
         output_array = insert_at(output_array, (block.x, block.y), image)
-        print(fname, " Done!!!")
 
     #output_image = output_image.transpose(Image.FLIP_TOP_BOTTOM)
     output_array = np.flipud(output_array)
