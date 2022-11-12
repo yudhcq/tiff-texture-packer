@@ -291,7 +291,7 @@ def main():
         new_mtl.write("\n".join(new_mtl_lines))
     #output_image.save(outname, format="PNG")
     print(output_image.shape)
-    new_dataset = rasterio.open('test1.tif', 'w', driver='GTiff',
+    new_dataset = rasterio.open('texture.tif', 'w', driver='GTiff',
                             height = output_image.shape[1], width = output_image.shape[2],
                             count=output_image.shape[0], dtype=str(output_image.dtype))
 
