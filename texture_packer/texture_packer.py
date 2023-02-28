@@ -149,7 +149,7 @@ def insert_at(big, pos, small):
     assert x2  <= big.shape[1], "the position will make the small matrix exceed the boundaries at x"
     assert y2  <= big.shape[2], "the position will make the small matrix exceed the boundaries at y"
 
-    big[:,x1:x2,y1:y2] = small
+    big[:, big.shape[1] - x2 : big.shape[1] - x1,y1:y2] = small
 
     return big
 
@@ -229,7 +229,6 @@ def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None,
         
         image = np.flipud(image.read())
         #image = image.transpose(Image.FLIP_TOP_BOTTOM)
-
         #Rescale images
         changes = None
         if extents and extents[filename]:
@@ -250,7 +249,7 @@ def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None,
     packer = BlockPacker()
     packer.fit(blocks)
 
-    output_array = np.empty((_, packer.root.w, packer.root.h))
+    output_array = np.empty((_, packer.root.h, packer.root.w))
     print("Output Array Shape: ", output_array.shape)
     uv_changes = {}
     for block in blocks:
@@ -273,7 +272,8 @@ def pack_images(image_paths, background=(0,0,0,0), format="GTIFF", extents=None,
 
         #output_array.paste(image, (block.x, block.y))
         #print(output_array.shape, image.shape, (block.x, block.y))
-        output_array = insert_at(output_array, (block.x, block.y), image)
+        # print(uv_changes[fname])
+        output_array = insert_at(output_array, (block.y, block.x), image)
 
     #output_image = output_image.transpose(Image.FLIP_TOP_BOTTOM)
     output_array = np.flipud(output_array)

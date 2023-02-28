@@ -83,7 +83,7 @@ def main():
         mtl_lines.insert(0,"# Textures packed with a simple packer")
 
     new_mtl_lines = []
-    outname = output_name+"_full.png"
+    outname = output_name+"_full.tif"
     for line in mtl_lines:
         if line.startswith("newmtl"):
             name = line[7:]
@@ -260,12 +260,12 @@ def main():
                         uv[0] = uv[0] * changes["aspect"][0] + changes["offset"][0]
                         uv[1] = uv[1] * changes["aspect"][1] + changes["offset"][1]
 
-
                         new_obj_lines[uv_line_idx] = "vt {0} {1}".format(
                             uv[0], uv[1]
                             # (uv[0] * changes["aspect"][0] + changes["offset"][0]),
                             # (uv[1] * changes["aspect"][1] + changes["offset"][1])
                         )
+
 
                     # get uv values at uv_idx
                     # alter them in the original file
@@ -291,9 +291,9 @@ def main():
         new_mtl.write("\n".join(new_mtl_lines))
     #output_image.save(outname, format="PNG")
     print(output_image.shape)
-    new_dataset = rasterio.open('texture.tif', 'w', driver='GTiff',
+    new_dataset = rasterio.open(outname, 'w', driver='GTiff',
                             height = output_image.shape[1], width = output_image.shape[2],
-                            count=output_image.shape[0], dtype=str(output_image.dtype))
+                            count=output_image.shape[0], dtype="int8")
 
     new_dataset.write(output_image)
 
